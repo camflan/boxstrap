@@ -96,7 +96,7 @@ REPLACE_EXISTING = False
 INSTALL_CUSTOM_CRONTAB = False
 #
 CRONTAB_LOCATION = 'path/to/crontab'
-CRONTAB_LOCATION = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
+CRONTAB_LOCATION = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB_LOCATION))
 #
 
 # PATH REPLACEMENTS CONFIGURATION
@@ -353,7 +353,7 @@ def add_crontab():
             if not DRY_RUN:
                 os.system("crontab %s" % CRONTAB_LOCATION)
     except Exception, e:
-        log.warn("Looks like your CRONTAB path isn't properly configured.")
+        log.warn("Looks like your CRONTAB_LOCATION path isn't properly configured.")
         log.warn("Specific Error: %s", e)
 
 if __name__ == "__main__":
