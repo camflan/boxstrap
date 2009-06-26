@@ -88,6 +88,13 @@ DEFAULT_DESTINATION=os.path.abspath(os.path.expanduser("~"))
 #CRONTAB = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
 #
 
+# IGNORE CRONTAB
+#
+# Set this to True if you don't have a crontab and don't want to
+# see our warnings about it.
+IGNORE_CRONTAB=False
+#
+
 # PATH REPLACEMENTS CONFIGURATION
 #
 # I wish there was a nicer way to guarentee the replacement order, but we need to make sure
@@ -321,7 +328,9 @@ def add_crontab():
                 os.system("crontab %s" % CRONTAB)
 
     except Exception, e:
-        log.error(e)
+        if not IGNORE_CRONTAB:
+            log.warn("Looks like you don't have a CRONTAB path configured. Ignore this if you don't need crontab automated.")
+            log.warn("Specific Error: %s", e)
 
 if __name__ == "__main__":
     if DRY_RUN:
