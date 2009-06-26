@@ -22,7 +22,17 @@ I keep all my dot-configs, unix utilities and a set of crontab entries on my dro
 
     30	*	*	*	*	sh $HOME/Dropbox/cron/process_pics.sh >/dev/null 2>&1
 
-As you can see, some of this scripts actions (and it's output reflects this) was modified from our defaults by the use of some configuration files placed in the directories that I want to process.
+As you can see, some of this scripts actions (and it's output reflects this) was modified from our defaults by the use of some configuration files placed in the directories that I want to process. Here is the config file in my dotvim directory:
+
+    #dotvim configuration file
+    link_dir=true
+    link_only=dotvimrc
+
+And here is the config file for my dotfiles directory:
+
+    #dotfiles configuration file
+    excludes=opensim.sh, old-dot-virtualenvwrapper_bashrc
+    recurse=false
 
 I have done my best to document the script as thouroghly as possible -- please read it for further information regarding the settings beyond what is in this quick readme. I have also done my best to note where I feel there are improvements to be made, the script was created, tested, and finished in under an hour - not including this documentation. If you have any additions, improvements, bugs, or anything else please feel free to report, fix, or fork this project.
 
