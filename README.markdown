@@ -54,7 +54,7 @@ Is the output correct?
 Do you have a custom crontab?
 -----------------------------
 
-If you do, add it's path to `CRONTAB` and we'll add it to your system crontab.
+If you do, add it's path to `CRONTAB_LOCATION`, flip on `INSTALL_CUSTOM_CRONTAB` and we'll add it to your system crontab.
 
 CONFIGURATION
 =============
