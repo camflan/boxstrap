@@ -44,8 +44,7 @@ log = logging.getLogger('boxStrap')
 # PATHS TO ACT ON
 #
 # relative location paths to our Dropbox root. We will recurse unless told not to by config.
-#PATHS_TO_PROCESS = ['paths', 'go', 'here',]
-PATHS_TO_PROCESS = ['dotvim', 'dotfiles',]
+PATHS_TO_PROCESS = ['paths', 'go', 'here',]
 #
 
 # DRY RUN
@@ -86,23 +85,18 @@ DEFAULT_DESTINATION = os.path.abspath(os.path.expanduser("~"))
 # the destination path and replace with our new one.
 #
 # PLEASE USE WITH CAUTION, THIS MIGHT REPLACE SOMETHING YOU NEED
-REPLACE_EXISTING = True
+REPLACE_EXISTING = False
 #
 
 # YOUR CRONTAB
 #
 # If you have a custom crontab, we will add it to the system crontab
-# for the current user. Leave commented out if you don't have one.
+# for the current user. Enable and set your path.
 #
-#CRONTAB = 'path/to/crontab'
-#CRONTAB = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
+INSTALL_CUSTOM_CRONTAB = False
 #
-
-# IGNORE CRONTAB
-#
-# Set this to True if you don't have a crontab and don't want to
-# see our warnings about it.
-IGNORE_CRONTAB = False
+CRONTAB_LOCATION = 'path/to/crontab'
+CRONTAB_LOCATION = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
 #
 
 # PATH REPLACEMENTS CONFIGURATION
@@ -352,17 +346,15 @@ def add_crontab():
     
     """
     try:
-        if CRONTAB:
-            ct = open(CRONTAB)
+        if INSTALL_CUSTOM_CRONTAB:
+            ct = open(CRONTAB_LOCATION)
             log.info("will add to crontab:\n\n%s\n" % ct.read())
 
             if not DRY_RUN:
-                os.system("crontab %s" % CRONTAB)
-
+                os.system("crontab %s" % CRONTAB_LOCATION)
     except Exception, e:
-        if not IGNORE_CRONTAB:
-            log.warn("Looks like you don't have a CRONTAB path configured. Ignore this if you don't need crontab automated.")
-            log.warn("Specific Error: %s", e)
+        log.warn("Looks like your CRONTAB path isn't properly configured.")
+        log.warn("Specific Error: %s", e)
 
 if __name__ == "__main__":
     if DRY_RUN:
