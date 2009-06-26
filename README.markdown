@@ -36,12 +36,16 @@ At the folder level, you can define a local configuration. Below are the options
 link_dir **(BOOL)**
 -------------------
 
-Set this to *True* so that the containing directory is linked in it's entirety to the destination. So, instead of linking all the files in this directory, the directory itself will be linked. **NOTE: If this is True, then only `destination` and `link_only` will be used.**
+Set this to *True* so that the containing directory is linked in it's entirety to the destination. So, instead of linking all the files in this directory, the directory itself will be linked. 
+
+**NOTE:** If this is True, then only `destination` and `link_only` will be used.
 
 link_only **(comma-separated paths)**
 -------------------------------------
 
-This is only honored if you have link_dir set to *True*. This will allow you to set a series of paths to link outside of the linked directory. **Example: you have your dot-vim directory that needs linked to `$HOME/.vim` but you need your `dot-vimrc` (contained in your `dot-vim` directory) to be linked to `$HOME/.vimrc` also, so set this to `dot-vimrc`.**
+This is only honored if you have link_dir set to *True*. This will allow you to set a series of paths to link outside of the linked directory. 
+
+**Example:** you have your dot-vim directory that needs linked to `$HOME/.vim` but you need your `dot-vimrc` (contained in your `dot-vim` directory) to be linked to `$HOME/.vimrc` also, so set this to `dot-vimrc`.
 
 excludes **(comma-separated paths)**
 -------------------------------------
