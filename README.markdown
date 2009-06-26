@@ -6,6 +6,8 @@ by Camron Flanders <camron[dot]flanders[squiggly-at-symbol]gmail[dot]com>
 
 A bootstrap script used to automate the install a set of environment configurations, apps, and crontab entries.
 
+I have done my best to document the script as thouroghly as possible -- please read it for further information regarding the settings beyond what is in this quick readme. I have also done my best to note where I feel there are improvements to be made, the script was created, tested, and finished in under an hour - not including this documentation. If you have any additions, improvements, bugs, or anything else please feel free to report, fix, or fork this project.
+
 TO_USE
 ======
 
@@ -18,6 +20,7 @@ Is the output correct?
 ----------------------
 
 **YES?** *Sweet!* Set `DRY_RUN` to *False* and run it again!
+
 **No?** Setup some configuration files for directory-level override of defaults *OR* maybe you need to change the defaults?
 
 Do you have a custom crontab?
