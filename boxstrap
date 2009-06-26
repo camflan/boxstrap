@@ -315,7 +315,7 @@ def add_crontab():
     try:
         if CRONTAB:
             ct = open(CRONTAB)
-            log.info("will add crontab:\n\n%s\n" % ct.read())
+            log.info("will add to crontab:\n\n%s\n" % ct.read())
 
             if not DRY_RUN:
                 os.system("crontab %s" % CRONTAB)

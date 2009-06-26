@@ -18,7 +18,7 @@ I keep all my dot-configs, unix utilities and a set of crontab entries on my dro
     [boxStrap | INFO]: will link /Users/camron/Dropbox/dotvim/dotvimrc => /Users/camron/.vimrc
     [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/gist => /usr/local/bin/gist
     [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/jhead => /usr/local/bin/jhead
-    [boxStrap | INFO]: will add crontab:
+    [boxStrap | INFO]: will add to crontab:
 
     30	*	*	*	*	sh $HOME/Dropbox/cron/process_pics.sh >/dev/null 2>&1
 
