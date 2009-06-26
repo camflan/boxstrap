@@ -4,7 +4,25 @@ BOXSTRAP
 An automated bootstrapping script to configure/install an environment located on a Dropbox.
 by Camron Flanders <camron[dot]flanders[squiggly-at-symbol]gmail[dot]com>
 
-A bootstrap script used to automate the install a set of environment configurations, apps, and crontab entries.
+I keep all my dot-configs, unix utilities and a set of crontab entries on my dropbox so that it's always backed up if I ever need it on another machine, or if (knock on wood) something happens and I need to re-install the OS on my laptop. I keep everything in human-readable and non-hidden files on my dropbox. I have been using a naming convention for quite a long time now and decided to use that to my advantage. Here is some sample output to help describe what I'm talking about:
+
+    camron@styx Dropbox $> python code/python/boxstrap/boxstrap 
+    [boxStrap | ERROR]: THIS IS A DRY RUN, NO FILES WILL BE LINKED!
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-bash_profile => /Users/camron/.bash_profile
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-bashrc => /Users/camron/.bashrc
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-gitconfig => /Users/camron/.gitconfig
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-gitignore => /Users/camron/.gitignore
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-inputrc => /Users/camron/.inputrc
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-ssh-slash-config => /Users/camron/.ssh/config
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotvim => /Users/camron/.vim
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotvim/dotvimrc => /Users/camron/.vimrc
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/gist => /usr/local/bin/gist
+    [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/jhead => /usr/local/bin/jhead
+    [boxStrap | INFO]: will add crontab:
+
+    30	*	*	*	*	sh $HOME/Dropbox/cron/process_pics.sh >/dev/null 2>&1
+
+As you can see, some of this scripts actions (and it's output reflects this) was modified from our defaults by the use of some configuration files placed in the directories that I want to process.
 
 I have done my best to document the script as thouroghly as possible -- please read it for further information regarding the settings beyond what is in this quick readme. I have also done my best to note where I feel there are improvements to be made, the script was created, tested, and finished in under an hour - not including this documentation. If you have any additions, improvements, bugs, or anything else please feel free to report, fix, or fork this project.
 
