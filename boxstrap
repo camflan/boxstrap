@@ -1,0 +1,333 @@
+#! /usr/bin/python
+
+#
+# BOXSTRAP
+# by Camron Flanders <camron[dot]flanders[squiggly-at-symbol]gmail[dot]com>
+#
+# This is a bootstrapping script to help setup a new environment using your dropbox.
+#
+# Copyright (c) 2009, Camron Flanders
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the developer nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY Camron Flanders ''AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Camron Flanders BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+import sys
+import os
+import re
+import logging
+
+logging.basicConfig(level	= logging.INFO,
+					format	= '[%(name)s | %(levelname)s]: %(message)s',)
+log = logging.getLogger('boxStrap')
+
+# PATHS TO ACT ON
+#
+# relative location paths to our Dropbox root. We will recurse unless told not to by config.
+PATHS_TO_PROCESS = ['dotfiles', 'dotvim', 'apps',]
+#
+
+# DRY RUN
+#
+# Turn this on if you want to see the paths, but not actually
+# link files to their destinations
+DRY_RUN = True
+#
+
+# DROPBOX LOCATION
+#
+# We assume that we are being run from the root of your Dropbox
+# if not, we will need the path to root of Dropbox.
+DROPBOX_LOCATION = os.path.abspath(os.getcwd())
+#
+
+# CONFIG FILES
+#
+# These config files will describe what to exclude, and how we should
+# treat the directory. If it's not found we will symlink the directory
+# as a whole. if file exists but is empty, we will symlink contents of
+# the directory. If the path is a file, we just symlink. 
+# more options described in help.
+CONFIG_FILE_NAME = "boxStrapConfig"
+#
+
+# DEFAULT DESTINATION PATH
+#
+# We will assume you are symlinking to your $HOME directory, if you
+# want to change this - globally - do so here, otherwise override
+# on a directory basis in your CONFIG FILES
+DEFAULT_DESTINATION=os.path.abspath(os.path.expanduser("~"))
+#
+
+# YOUR CRONTAB
+#
+# If you have a custom crontab, we will add it to the system crontab
+# for the current user. Leave commented out if you don't have one.
+#
+CRONTAB = 'cron/_crontab'
+CRONTAB = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
+#
+
+# PATH REPLACEMENTS CONFIGURATION
+#
+# I wish there was a nicer way to guarentee the replacement order, but we need to make sure
+# '-' comes before 'dash' or else the 'dash' replacement will get replaced by spaces from '-'.
+#
+# If there is another way -- contact me @ camron[dot]flanders[squiggly-at-symbol]gmail[dot]com
+REPLACEMENT_ORDER = ['slash', 'dot', '-', 'dash',]
+#
+PATH_REPLACEMENTS = {"slash": "/",
+                     "dash": "-", 
+                     "dot": ".", 
+                     "-": "", }
+#
+
+class Configuration():
+    """ 
+    This is our config object, supports our directory-specific overrides.
+    
+    """
+    def __init__(self, path=None):
+        # if True, this tells script to link entire directory, not files contained
+        self._link_dir = False
+
+        # if link_dir is true, we can specifiy a set of files in that directory that
+        # need to be linked elsewhere, outside of the directory.
+        self._link_only = []
+
+        # tells script (if not linking dir) which files to not link
+        self._excludes = []
+
+        # tells script whether to recurse past root of directory
+        self._recurse = True
+
+        # override for link destination
+        self._destination = DEFAULT_DESTINATION
+
+        if path and os.path.exists(path):
+            self.load_custom_config(path)
+
+    #
+    # our properties have custom setters so we can 
+    # validate our input appropriately.
+    #
+    # I think this is a bit messy, but it's also
+    # the best (as far as I know) for backwards
+    # compatibility on old Python versions.
+    #
+    def get_link_dir(self):
+        return self._link_dir
+    def set_link_dir(self, ld):
+        self._link_dir = self.resolve_boolean(ld)
+
+    link_dir = property(get_link_dir, set_link_dir)
+
+    def get_link_only(self):
+        return self._link_only
+    def set_link_only(self, pa):
+        self._link_only = self.resolve_path_array(pa)
+
+    link_dir = property(get_link_dir, set_link_dir)
+
+    def get_excludes(self):
+        return self._excludes
+    def set_excludes(self, exclude):
+        self._excludes = self.resolve_path_array(exclude)
+
+    excludes = property(get_excludes, set_excludes)
+
+    def get_recurse(self):
+        return self._recurse
+    def set_recurse(self, r):
+        self._recurse = self.resolve_boolean(r)
+
+    recurse = property(get_recurse, set_recurse)
+
+    def get_destination(self):
+        return self._destination
+    def set_destination(self, d):
+        self._destination = os.path.abspath(d.strip())
+
+    destination = property(get_destination, set_destination)
+    #
+    # end of properties
+    #
+
+    #
+    # validators
+    #
+    def resolve_boolean(self, bool):
+        """ takes a variety of boolean values and makes it work for us """
+        if r.upper() in ['NO', 'FALSE', '0']:
+            return False
+        else:
+            return True
+
+    def resolve_path_array(self, pArray):
+        """ this splits up our comma separated paths """
+        rtnArray = []
+        for i in pArray.split(","):
+            rtnArray.append(i.strip())
+        return rtnArray
+    #
+    # end of validator methods
+    #
+
+    def load_custom_config(self, path):
+        """
+        This is how we load up a custom config, a bit hackish since this 
+        whole thing was written in an hour...might work on cleaning it up
+        a bit down the road.
+
+        """
+        ex_re = re.compile("excludes=(.*)")
+        dest_re = re.compile("destination=(.*)")
+        rec_re = re.compile("recurse=([\w]+)")
+        linkdir_re = re.compile("link_dir=([\w]+)")
+        linkonly_re = re.compile("link_only=([\w]+)")
+
+        re_map = {'excludes':ex_re, 'recurse':rec_re, 'destination':dest_re, 'link_dir':linkdir_re, 'link_only':linkonly_re,}
+
+        config_file = open(path)
+        config_string = config_file.read()
+
+        for line in config_string.split("\n"):
+            for k,v in re_map.iteritems():
+                match = re.match(v, line, re.M)
+                try:
+                    setattr(self, k, match.group(1))
+                except:
+                    pass
+
+def link_file(src, dest=None, dest_dir=None):
+    """
+    This will handle swapping my human readable paths for real path
+    components and set up a symlink accordingly -- or just print
+    what it would've done on a DRY_RUN.
+    
+    """
+    for k in REPLACEMENT_ORDER:
+        v = PATH_REPLACEMENTS[k]
+        dest = re.sub(k, v, src if not dest else dest)
+
+    dest = os.path.abspath(os.path.join(DEFAULT_DESTINATION if not dest_dir else dest_dir, dest))
+
+    log.info("will link %s => %s" % (src, dest))
+    if not DRY_RUN:
+        os.link(src, dest)
+
+def link_files(file_array):
+    """
+    Simple function to loop through our file_array, linking happily
+    as it goes. If a file has a dest_dir other than our default,
+    we take care of that too.
+    
+    """
+    for file in file_array:
+        if len(file) is 2:
+            link_file(file[0], file[1])
+        elif len(file) is 3:
+            link_file(file[0], file[1], file[2])
+
+def gather_files(cfg=Configuration(), paths=None):
+    """
+    This processes the paths we give it. When it finds a config file
+    we process the files according to the directory-local configuration
+    override. This is a recursively called function -- care has been taken
+    to make sure we DON'T follow symbolic links, but I cannot guarentee
+    in some obscure situations this won't become a loop.
+    
+    """
+    file_array = []
+    for path in paths if paths else PATHS_TO_PROCESS:
+        path = os.path.join(DROPBOX_LOCATION, path)
+
+        if(os.path.isdir(path)):
+            if not os.path.exists(path):
+                log.warn("%s doesn't exist." % path)
+                continue
+
+            cfg = Configuration(os.path.join(path, CONFIG_FILE_NAME))
+
+            if cfg.link_dir:
+                file_array.append((path, os.path.join(cfg.destination, os.path.basename(path.rstrip("/"))), cfg.destination),)
+                paths = []
+
+                if isinstance(cfg.link_only, (list, tuple,)):
+                    for p in cfg.link_only:
+                        paths.append(os.path.join(path, p))
+                elif isinstance(cfg.link_only, (unicode, str)):
+                    paths.append(os.path.join(path,cfg.link_only))
+                    
+                file_array.extend(gather_files(cfg=cfg, paths=paths))
+            else:
+                paths = []
+                for item in os.listdir(path):
+                    if item in cfg.excludes:
+                        log.debug("excluded")
+                        continue
+                    elif re.match("\.", item):
+                        log.debug("dotfile")
+                        continue
+                    elif item == CONFIG_FILE_NAME:
+                        log.debug("our config, auto-excluding")
+                        continue
+                    else:
+                        log.debug("adding to array")
+                        paths.append(os.path.join(path, item)) 
+
+                file_array.extend(gather_files(cfg=cfg, paths=paths))
+        else:
+            if not os.path.exists(path):
+                log.warn("%s doesn't exist." % path)
+                continue
+
+            file_array.append((path, os.path.join(cfg.destination, os.path.basename(path.rstrip("/"))), cfg.destination),)
+
+    return file_array
+
+def add_crontab():
+    """
+    Simple function to add a set of custom crontab entries to 
+    the current user's crontab.
+    
+    """
+    try:
+        if CRONTAB:
+            ct = open(CRONTAB)
+            log.info("will add crontab:\n\n%s\n" % ct.read())
+
+            if not DRY_RUN:
+                os.system("crontab %s" % CRONTAB)
+
+    except Exception, e:
+        log.error(e)
+
+if __name__ == "__main__":
+    if DRY_RUN:
+        log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED!")
+
+    file_array = gather_files()
+    link_files(file_array)
+    add_crontab()
+
