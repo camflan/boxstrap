@@ -44,7 +44,8 @@ log = logging.getLogger('boxStrap')
 # PATHS TO ACT ON
 #
 # relative location paths to our Dropbox root. We will recurse unless told not to by config.
-PATHS_TO_PROCESS = ['paths', 'go', 'here',]
+#PATHS_TO_PROCESS = ['paths', 'go', 'here',]
+PATHS_TO_PROCESS = ['dotvim', 'dotfiles',]
 #
 
 # DRY RUN

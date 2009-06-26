@@ -4,20 +4,46 @@ BOXSTRAP
 An automated bootstrapping script to configure/install an environment located on a Dropbox.
 by Camron Flanders <camron[dot]flanders[squiggly-at-symbol]gmail[dot]com>
 
-I keep all my dot-configs, unix utilities and a set of crontab entries on my dropbox so that it's always backed up if I ever need it on another machine, or if (knock on wood) something happens and I need to re-install the OS on my laptop. I keep everything in human-readable and non-hidden files on my dropbox. I have been using a naming convention for quite a long time now and decided to use that to my advantage. Here is some sample output to help describe what I'm talking about:
+I keep all my dot-configs, unix utilities and a set of crontab entries on my dropbox so that it's always backed up if I ever need it on another machine, or if (knock on wood) something happens and I need to re-install the OS on my laptop. I keep everything in human-readable and non-hidden files on my dropbox. I have been using a naming convention for quite a long time now and decided to use that to my advantage. 
 
-    camron@styx Dropbox $> python code/python/boxstrap/boxstrap 
-    [boxStrap | ERROR]: THIS IS A DRY RUN, NO FILES WILL BE LINKED!
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-bash_profile => /Users/camron/.bash_profile
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-bashrc => /Users/camron/.bashrc
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-gitconfig => /Users/camron/.gitconfig
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-gitignore => /Users/camron/.gitignore
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-inputrc => /Users/camron/.inputrc
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotfiles/dot-ssh-slash-config => /Users/camron/.ssh/config
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotvim => /Users/camron/.vim
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/dotvim/dotvimrc => /Users/camron/.vimrc
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/gist => /usr/local/bin/gist
-    [boxStrap | INFO]: will link /Users/camron/Dropbox/apps/jhead => /usr/local/bin/jhead
+Here is some sample output to help describe what I'm talking about:
+
+    camron@styx Dropbox $> ./boxstrap
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotvim]
+                                   to: [/Users/camron/.vim]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotvim/dotvimrc]
+                                   to: [/Users/camron/.vimrc]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-bash_profile]
+                                   to: [/Users/camron/.bash_profile]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-bashrc]
+                                   to: [/Users/camron/.bashrc]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-gitconfig]
+                                   to: [/Users/camron/.gitconfig]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-gitignore]
+                                   to: [/Users/camron/.gitignore]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-inputrc]
+                                   to: [/Users/camron/.inputrc]
+    [boxStrap | INFO]: ---
+
+    [boxStrap | INFO]: Will link from: [/Users/camron/Dropbox/dotfiles/dot-ssh-slash-config]
+                                   to: [/Users/camron/.ssh/config]
+    [boxStrap | INFO]: [config] already exists, REPLACE_EXISTING is currently set to [False].
+    [boxStrap | INFO]: If you DO want to replace [config], set REPLACE_EXISTING to True
+    [boxStrap | INFO]: ---
+    [boxStrap | ERROR]: 
+
     [boxStrap | INFO]: will add to crontab:
 
     30	*	*	*	*	sh $HOME/Dropbox/cron/process_pics.sh >/dev/null 2>&1
