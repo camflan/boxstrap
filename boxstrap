@@ -44,7 +44,8 @@ log = logging.getLogger('boxStrap')
 # PATHS TO ACT ON
 #
 # relative location paths to our Dropbox root. We will recurse unless told not to by config.
-PATHS_TO_PROCESS = ['paths', 'go', 'here',]
+#PATHS_TO_PROCESS = ['paths', 'go', 'here',]
+PATHS_TO_PROCESS = ['dotvim', 'dotfiles',]
 #
 
 # DRY RUN
@@ -76,7 +77,16 @@ CONFIG_FILE_NAME = "boxStrapConfig"
 # We will assume you are symlinking to your $HOME directory, if you
 # want to change this - globally - do so here, otherwise override
 # on a directory basis in your CONFIG FILES
-DEFAULT_DESTINATION=os.path.abspath(os.path.expanduser("~"))
+DEFAULT_DESTINATION = os.path.abspath(os.path.expanduser("~"))
+#
+
+# REPLACE EXISTING
+#
+# If this is true, we will remove existing link/file/directory at
+# the destination path and replace with our new one.
+#
+# PLEASE USE WITH CAUTION, THIS MIGHT REPLACE SOMETHING YOU NEED
+REPLACE_EXISTING = True
 #
 
 # YOUR CRONTAB
@@ -92,7 +102,7 @@ DEFAULT_DESTINATION=os.path.abspath(os.path.expanduser("~"))
 #
 # Set this to True if you don't have a crontab and don't want to
 # see our warnings about it.
-IGNORE_CRONTAB=False
+IGNORE_CRONTAB = False
 #
 
 # PATH REPLACEMENTS CONFIGURATION
@@ -238,10 +248,32 @@ def link_file(src, dest=None, dest_dir=None):
         dest = re.sub(k, v, src if not dest else dest)
 
     dest = os.path.abspath(os.path.join(DEFAULT_DESTINATION if not dest_dir else dest_dir, dest))
+    file_name = os.path.basename(dest.rstrip("/"))
 
-    log.info("will link %s => %s" % (src, dest))
-    if not DRY_RUN:
-        os.link(src, dest)
+    link_text = "Will link from: [%s]\n                               to: [%s]"
+
+    log.info(link_text % (src, dest))
+    if(os.path.exists(dest)):
+        will_replace_string = "We will be removing [%s] before making our link" % dest
+        will_not_replace_string = "If you DO want to replace [%s], set REPLACE_EXISTING to True" % file_name
+
+        log.info("[%s] already exists, REPLACE_EXISTING is currently set to [%s]." % (file_name, REPLACE_EXISTING))
+        log.info(will_not_replace_string if not REPLACE_EXISTING else will_replace_string)
+
+        if not DRY_RUN and REPLACE_EXISTING:
+            try:
+                os.remove(path)
+                log.info("Removed successfully")
+            except Exception, e:
+                log.error(e)
+
+        log.info("---\n")
+
+        if not REPLACE_EXISTING:
+            return
+
+        if not DRY_RUN:
+            os.link(src, dest)
 
 def link_files(file_array):
     """
@@ -334,9 +366,17 @@ def add_crontab():
 
 if __name__ == "__main__":
     if DRY_RUN:
-        log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED!")
+        log.error("-----------------------------------------------------------------")
+        log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED, REMOVED, or MODIFIED.")
+        log.error("-----------------------------------------------------------------\n")
 
     file_array = gather_files()
     link_files(file_array)
     add_crontab()
 
+    if DRY_RUN:
+        log.error("\n")
+        log.error("------------------------------------------------------------------------------")
+        log.error("REMINDER: THIS WAS A DRY RUN, NO FILES HAVE BEEN LINKED, REMOVED, or MODIFIED.\n")
+        log.error("If the output looks correct, set DRY_RUN to True and re-run.")
+        log.error("------------------------------------------------------------------------------")
