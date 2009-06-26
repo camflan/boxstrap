@@ -44,7 +44,7 @@ log = logging.getLogger('boxStrap')
 # PATHS TO ACT ON
 #
 # relative location paths to our Dropbox root. We will recurse unless told not to by config.
-PATHS_TO_PROCESS = ['dotfiles', 'dotvim', 'apps',]
+PATHS_TO_PROCESS = ['paths', 'go', 'here',]
 #
 
 # DRY RUN
@@ -84,8 +84,8 @@ DEFAULT_DESTINATION=os.path.abspath(os.path.expanduser("~"))
 # If you have a custom crontab, we will add it to the system crontab
 # for the current user. Leave commented out if you don't have one.
 #
-CRONTAB = 'cron/_crontab'
-CRONTAB = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
+#CRONTAB = 'path/to/crontab'
+#CRONTAB = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB))
 #
 
 # PATH REPLACEMENTS CONFIGURATION
