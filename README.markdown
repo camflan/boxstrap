@@ -28,6 +28,36 @@ Do you have a custom crontab?
 
 If you do, add it's path to `CRONTAB` and we'll add it to your system crontab.
 
+CONFIGURATION
+=============
+
+At the folder level, you can define a local configuration. Below are the options available:
+
+link_dir **(BOOL)**
+-------------------
+
+Set this to *True* so that the containing directory is linked in it's entirety to the destination. So, instead of linking all the files in this directory, the directory itself will be linked. **NOTE: If this is True, then only `destination` and `link_only` will be used.**
+
+link_only **(comma-separated paths)**
+-------------------------------------
+
+This is only honored if you have link_dir set to *True*. This will allow you to set a series of paths to link outside of the linked directory. **Example: you have your dot-vim directory that needs linked to `$HOME/.vim` but you need your `dot-vimrc` (contained in your `dot-vim` directory) to be linked to `$HOME/.vimrc` also, so set this to `dot-vimrc`.**
+
+excludes **(comma-separated paths)**
+-------------------------------------
+
+This is a series of paths that you don't want to link. Say you have a couple of files that you don't need linked elsewhere, you just want to keep them where they are -- add them here.
+
+recurse **(BOOL)**
+------------------
+
+If this is *False*, we won't burrow down into the subdirectories of the current path.
+
+destination **(string)**
+------------------------
+
+This is the root destination of the current directories contents. Our default is `$HOME`, but say you have some unix utilities that you want in `/usr/local/bin/`, just set this to that!
+
 LICENSE
 =======
 
