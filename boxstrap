@@ -44,8 +44,7 @@ log = logging.getLogger('boxStrap')
 # PATHS TO ACT ON
 #
 # relative location paths to our Dropbox root. We will recurse unless told not to by config.
-#PATHS_TO_PROCESS = ['paths', 'go', 'here',]
-PATHS_TO_PROCESS = ['dotvim', 'dotfiles',]
+PATHS_TO_PROCESS = ['paths', 'go', 'here',]
 #
 
 # DRY RUN
@@ -299,6 +298,9 @@ def gather_files(cfg=Configuration(), paths=None):
         if(os.path.isdir(path)):
             if not os.path.exists(path):
                 log.warn("%s doesn't exist." % path)
+                continue
+
+            if not cfg.recurse:
                 continue
 
             cfg = Configuration(os.path.join(path, CONFIG_FILE_NAME))
