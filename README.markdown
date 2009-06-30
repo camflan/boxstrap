@@ -71,6 +71,7 @@ Is this script at the root of your dropbox?
 -------------------------------------------
 
 **Yes?** Add your paths to `PATHS_TO_PROCESS` list in the script and run with `DRY_RUN` set to *True*.
+
 **No?** Tell us where your dropbox is located using `DROPBOX_LOCATION`
 
 Is the output correct?
