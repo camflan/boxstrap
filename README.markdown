@@ -4,7 +4,7 @@ BOXSTRAP
 An automated bootstrapping script to configure/install an environment located on a Dropbox.
 by Camron Flanders <camron[dot]flanders[squiggly-at-symbol]gmail[dot]com>
 
-I keep all my dot-configs, unix utilities and a set of crontab entries on my dropbox so that it's always backed up if I ever need it on another machine, or if (knock on wood) something happens and I need to re-install the OS on my laptop. I keep everything in human-readable and non-hidden files on my dropbox. I have been using a naming convention for quite a long time now and decided to use that to my advantage. 
+I keep all my dot-configs, unix utilities and a set of crontab entries on my dropbox so that it's always backed up if I ever need it on another machine, or if (knock on wood) something happens and I need to re-install the OS on my laptop. All files are saved as human-readable and non-hidden. I have been using this naming convention for quite a long time now and decided to use that to my advantage. 
 
 Here is some sample output to help describe what I'm talking about:
 
@@ -60,6 +60,8 @@ And here is the config file for my dotfiles directory:
     excludes=opensim.sh, old-dot-virtualenvwrapper_bashrc
     recurse=false
 
+There are also a few command line options available, `boxstrap -h` will display them. You can ask it to be verbose `-v`, tell it to shut up `-q`, or even use it to generate a configuration file for you `-g`.
+
 I have done my best to document the script as thouroghly as possible -- please read it for further information regarding the settings beyond what is in this quick readme. I have also done my best to note where I feel there are improvements to be made, the script was created, tested, and finished in under an hour - not including this documentation. If you have any additions, improvements, bugs, or anything else please feel free to report, fix, or fork this project.
 
 TO_USE
@@ -85,7 +87,9 @@ If you do, add it's path to `CRONTAB_LOCATION`, flip on `INSTALL_CUSTOM_CRONTAB`
 CONFIGURATION
 =============
 
-At the folder level, you can define a local configuration. Below are the options available:
+At the folder level, you can define a local configuration. There is also a convenience method in the script that will generate this for you: `boxstrap -g DIR`. 
+
+Here are the options available in the directory-local configs:
 
 link_dir **(BOOL)**
 -------------------

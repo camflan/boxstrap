@@ -36,6 +36,7 @@ import sys
 import os
 import re
 import logging
+import optparse
 
 logging.basicConfig(level	= logging.INFO,
 					format	= '[%(name)s | %(levelname)s]: %(message)s',)
@@ -158,7 +159,7 @@ class Configuration():
     def set_link_only(self, pa):
         self._link_only = self.resolve_path_array(pa)
 
-    link_dir = property(get_link_dir, set_link_dir)
+    link_only = property(get_link_dir, set_link_dir)
 
     def get_excludes(self):
         return self._excludes
@@ -211,13 +212,11 @@ class Configuration():
         a bit down the road.
 
         """
-        ex_re = re.compile("excludes=(.*)")
-        dest_re = re.compile("destination=(.*)")
-        rec_re = re.compile("recurse=([\w]+)")
-        linkdir_re = re.compile("link_dir=([\w]+)")
-        linkonly_re = re.compile("link_only=([\w]+)")
-
-        re_map = {'excludes':ex_re, 'recurse':rec_re, 'destination':dest_re, 'link_dir':linkdir_re, 'link_only':linkonly_re,}
+        re_map = {'excludes':re.compile("excludes=(.*)"), 
+                  'recurse':re.compile("recurse=([\w]+)"), 
+                  'destination':re.compile("destination=(.*)"), 
+                  'link_dir':re.compile("link_dir=([\w]+)"), 
+                  'link_only':re.compile("link_only=([\w]+)"), }
 
         config_file = open(path)
         config_string = config_file.read()
@@ -247,12 +246,13 @@ def link_file(src, dest=None, dest_dir=None):
     link_text = "Will link from: [%s]\n                               to: [%s]"
 
     log.info(link_text % (src, dest))
+
     if(os.path.exists(dest)):
         will_replace_string = "We will be removing [%s] before making our link" % dest
         will_not_replace_string = "If you DO want to replace [%s], set REPLACE_EXISTING to True" % file_name
 
-        log.info("[%s] already exists, REPLACE_EXISTING is currently set to [%s]." % (file_name, REPLACE_EXISTING))
-        log.info(will_not_replace_string if not REPLACE_EXISTING else will_replace_string)
+        log.warn("[%s] already exists, REPLACE_EXISTING is currently set to [%s]." % (file_name, REPLACE_EXISTING))
+        log.warn(will_not_replace_string if not REPLACE_EXISTING else will_replace_string)
 
         if not DRY_RUN and REPLACE_EXISTING:
             try:
@@ -261,13 +261,14 @@ def link_file(src, dest=None, dest_dir=None):
             except Exception, e:
                 log.error(e)
 
-        log.info("---\n")
-
         if not REPLACE_EXISTING:
+            log.info("---\n")
             return
 
         if not DRY_RUN:
             os.link(src, dest)
+
+    log.info("---\n")
 
 def link_files(file_array):
     """
@@ -291,10 +292,13 @@ def gather_files(cfg=Configuration(), paths=None):
     in some obscure situations this won't become a loop.
     
     """
+    log.debug("paths: %s", paths)
+
     file_array = []
     for path in paths if paths else PATHS_TO_PROCESS:
         path = os.path.join(DROPBOX_LOCATION, path)
 
+        log.debug("WORKING WITH [%s]", path)
         if(os.path.isdir(path)):
             if not os.path.exists(path):
                 log.warn("%s doesn't exist." % path)
@@ -315,21 +319,23 @@ def gather_files(cfg=Configuration(), paths=None):
                 elif isinstance(cfg.link_only, (unicode, str)):
                     paths.append(os.path.join(path,cfg.link_only))
                     
-                file_array.extend(gather_files(cfg=cfg, paths=paths))
+                if len(paths) > 0:
+                    file_array.extend(gather_files(cfg=cfg, paths=paths))
             else:
                 paths = []
+                log.debug("Processing sub-files...")
                 for item in os.listdir(path):
                     if item in cfg.excludes:
-                        log.debug("excluded")
+                        log.debug("[%s] excluded by [%s]" % (item, cfg.excludes))
                         continue
                     elif re.match("\.", item):
-                        log.debug("dotfile")
+                        log.debug("[%s] dotfile" % item)
                         continue
                     elif item == CONFIG_FILE_NAME:
-                        log.debug("our config, auto-excluding")
+                        log.debug("[%s] our config, auto-excluding" % item)
                         continue
                     else:
-                        log.debug("adding to array")
+                        log.debug("[%s] adding to array" % item)
                         paths.append(os.path.join(path, item)) 
 
                 file_array.extend(gather_files(cfg=cfg, paths=paths))
@@ -340,6 +346,7 @@ def gather_files(cfg=Configuration(), paths=None):
 
             file_array.append((path, os.path.join(cfg.destination, os.path.basename(path.rstrip("/"))), cfg.destination),)
 
+    log.debug("file_array: %s" % file_array)
     return file_array
 
 def add_crontab():
@@ -352,6 +359,7 @@ def add_crontab():
         if INSTALL_CUSTOM_CRONTAB:
             ct = open(CRONTAB_LOCATION)
             log.info("will add to crontab:\n\n%s\n" % ct.read())
+            log.info("---")
 
             if not DRY_RUN:
                 os.system("crontab %s" % CRONTAB_LOCATION)
@@ -359,7 +367,39 @@ def add_crontab():
         log.warn("Looks like your CRONTAB_LOCATION path isn't properly configured.")
         log.warn("Specific Error: %s", e)
 
+def generate_config_file(option, opt_str, value, parser):
+    path = os.path.abspath(value)
+    cfg_file = os.path.join(path, CONFIG_FILE_NAME)
+
+    if os.path.exists(cfg_file):
+        log.warn("[%s] already exists, NOT creating a new one." % cfg_file)
+    else:
+        log.warn("Generating config file for [%s]" % path)
+
+        default_cfg = Configuration()
+        lines = ["# '%s' boxstrap configuration file\n" % os.path.basename(path.rstrip("/"))]
+
+        for k,v in default_cfg.__dict__.iteritems():
+            lines.append("%s=%s\n" % (k.lstrip("_"),v))
+
+        file = open(cfg_file, "w")
+        file.writelines(lines)
+        file.close()
+
+        log.info("config generated.")
+    sys.exit(0)
+
 if __name__ == "__main__":
+
+    parser = optparse.OptionParser()
+    parser.add_option("-q", "--quiet",   dest="level", action="store_const", const=logging.WARN, help="Only show errors.")
+    parser.add_option("-v", "--verbose", dest="level", action="store_const", const=logging.DEBUG, help="Show all information, useful for debugging.")
+    parser.add_option("-g", "--generate-config", action="callback", metavar="DIR", nargs=1, type='string', callback=generate_config_file, help="This generates a config file filled with the defaults in DIR")
+
+    opts, args = parser.parse_args(sys.argv)
+
+    log.setLevel(opts.level)
+
     if DRY_RUN:
         log.error("-----------------------------------------------------------------")
         log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED, REMOVED, or MODIFIED.")
@@ -372,6 +412,6 @@ if __name__ == "__main__":
     if DRY_RUN:
         log.error("\n")
         log.error("------------------------------------------------------------------------------")
-        log.error("REMINDER: THIS WAS A DRY RUN, NO FILES HAVE BEEN LINKED, REMOVED, or MODIFIED.\n")
+        log.error("REMINDER: THIS WAS A DRY RUN, NO FILES HAVE BEEN LINKED, REMOVED, or MODIFIED.")
         log.error("If the output looks correct, set DRY_RUN to True and re-run.")
         log.error("------------------------------------------------------------------------------")
