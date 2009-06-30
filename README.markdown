@@ -70,12 +70,13 @@ TO_USE
 Is this script at the root of your dropbox?
 -------------------------------------------
 
-Add your paths to `PATHS_TO_PROCESS` list in the script and run with `DRY_RUN` set to *True*.
+**Yes?** Add your paths to `PATHS_TO_PROCESS` list in the script and run with `DRY_RUN` set to *True*.
+**No?** Tell us where your dropbox is located using `DROPBOX_LOCATION`
 
 Is the output correct?
 ----------------------
 
-**YES?** *Sweet!* Set `DRY_RUN` to *False* and run it again!
+**Yes?** *Sweet!* Set `DRY_RUN` to *False* and run it again!
 
 **No?** Setup some configuration files for directory-level override of defaults *OR* maybe you need to change the defaults?
 
@@ -87,7 +88,7 @@ If you do, add it's path to `CRONTAB_LOCATION`, flip on `INSTALL_CUSTOM_CRONTAB`
 CONFIGURATION
 =============
 
-At the folder level, you can define a local configuration. There is also a convenience method in the script that will generate this for you: `boxstrap -g DIR`. 
+At the folder level, you can define a local configuration. We have a convenience method in the script that will generate this for you: `boxstrap -g DIR`. 
 
 Here are the options available in the directory-local configs:
 
