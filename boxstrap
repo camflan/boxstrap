@@ -349,7 +349,7 @@ def gather_files(cfg=Configuration(), paths=None):
     log.debug("file_array: %s" % file_array)
     return file_array
 
-def add_crontab():
+def add_crontab(replace=False):
     """
     Simple function to add a set of custom crontab entries to 
     the current user's crontab.
@@ -358,14 +358,38 @@ def add_crontab():
     try:
         if INSTALL_CUSTOM_CRONTAB:
             ct = open(CRONTAB_LOCATION)
-            log.info("will add to crontab:\n\n%s\n" % ct.read())
+            log.info("will %s crontab:\n\n%s\n" % ("install" if not replace else "replace",ct.read()))
             log.info("---")
 
             if not DRY_RUN:
+                if not replace:
+                    log.info("Removing existing crontab")
+                    os.system("crontab -r")
+                    log.info("Installing new crontab")
+
                 os.system("crontab %s" % CRONTAB_LOCATION)
+        else:
+            log.info("INSTALL_CUSTOM_CRONTAB is set to False. For us to install your crontab, you must switch INSTALL_CUSTOM_CRONTAB to True and set CRONTAB_LOCATION to the correct path.")
     except Exception, e:
         log.warn("Looks like your CRONTAB_LOCATION path isn't properly configured.")
         log.warn("Specific Error: %s", e)
+
+def install_only_crontab(option, opt_str, value, parser, *args):
+    """
+    If command line is run with -c or --install-crontab then we will
+    install just the custom crontab, then exit.
+    
+    """
+    first_word = "Installing"
+    replace = False
+
+    if args and args[0] == 'True':
+        first_word = "Replacing"
+        replace = True
+
+    log.info("%s your crontab..." % first_word)
+    add_crontab(replace)
+    sys.exit(0)
 
 def generate_config_file(option, opt_str, value, parser):
     path = os.path.abspath(value)
@@ -390,15 +414,22 @@ def generate_config_file(option, opt_str, value, parser):
     sys.exit(0)
 
 if __name__ == "__main__":
-
     parser = optparse.OptionParser()
     parser.add_option("-q", "--quiet",   dest="level", action="store_const", const=logging.WARN, help="Only show errors.")
     parser.add_option("-v", "--verbose", dest="level", action="store_const", const=logging.DEBUG, help="Show all information, useful for debugging.")
+    parser.add_option("-c", "--install-crontab", action="callback", callback=install_only_crontab, help="This will install just your custom crontab.")
+    parser.add_option("-r", "--replace-crontab", action="callback", callback_args=('True',), callback=install_only_crontab, help="This will remove the current crontab and install your custom one.")
     parser.add_option("-g", "--generate-config", action="callback", metavar="DIR", nargs=1, type='string', callback=generate_config_file, help="This generates a config file filled with the defaults in DIR")
 
     opts, args = parser.parse_args(sys.argv)
 
     log.setLevel(opts.level)
+
+    if PATHS_TO_PROCESS == ['paths', 'go', 'here',]:
+        log.error("----------------------------------------------------------------")
+        log.error("You need to set PATHS_TO_PROCESS before we can execute. Exiting.")
+        log.error("----------------------------------------------------------------")
+        sys.exit(0)
 
     if DRY_RUN:
         log.error("-----------------------------------------------------------------")
