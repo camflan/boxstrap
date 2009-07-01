@@ -96,7 +96,7 @@ REPLACE_EXISTING = False
 #
 INSTALL_CUSTOM_CRONTAB = False
 #
-CRONTAB_LOCATION = 'path/to/crontab'
+CRONTAB_LOCATION = 'path/to/custom/crontab'
 CRONTAB_LOCATION = os.path.abspath(os.path.join(DROPBOX_LOCATION, CRONTAB_LOCATION))
 #
 
@@ -229,6 +229,9 @@ class Configuration():
                 except:
                     pass
 
+# our globals
+EXISTING_ARRAY = []
+
 def link_file(src, dest=None, dest_dir=None):
     """
     This will handle swapping my human readable paths for real path
@@ -243,32 +246,29 @@ def link_file(src, dest=None, dest_dir=None):
     dest = os.path.abspath(os.path.join(DEFAULT_DESTINATION if not dest_dir else dest_dir, dest))
     file_name = os.path.basename(dest.rstrip("/"))
 
-    link_text = "Will link from: [%s]\n                               to: [%s]"
-
+    link_text = "Attempting to link from: [%s]\n                                        to: [%s]"
     log.info(link_text % (src, dest))
 
     if(os.path.exists(dest)):
-        will_replace_string = "We will be removing [%s] before making our link" % dest
-        will_not_replace_string = "If you DO want to replace [%s], set REPLACE_EXISTING to True" % file_name
-
-        log.warn("[%s] already exists, REPLACE_EXISTING is currently set to [%s]." % (file_name, REPLACE_EXISTING))
-        log.warn(will_not_replace_string if not REPLACE_EXISTING else will_replace_string)
-
         if not DRY_RUN and REPLACE_EXISTING:
             try:
+                will_replace_string = "We will be removing [%s] before making our link" % dest
+                log.warn(will_replace_string)
                 os.remove(path)
                 log.info("Removed successfully")
             except Exception, e:
                 log.error(e)
 
         if not REPLACE_EXISTING:
-            log.info("---\n")
+            EXISTING_ARRAY.append(src)
+            log.info("                     Did not link, file exists.\n")
             return
 
-        if not DRY_RUN:
-            os.link(src, dest)
+    if not DRY_RUN:
+        os.link(src, dest)
+        log.info("Linked successfully\n")
 
-    log.info("---\n")
+    log.info("\n")
 
 def link_files(file_array):
     """
@@ -277,11 +277,24 @@ def link_files(file_array):
     we take care of that too.
     
     """
+    log.info("----------------------")
+    log.info("Start linking files...")
+    log.info("----------------------")
     for file in file_array:
         if len(file) is 2:
             link_file(file[0], file[1])
         elif len(file) is 3:
             link_file(file[0], file[1], file[2])
+
+    if len(EXISTING_ARRAY) > 0:
+        log.warn("These files already existed in destination paths:\n                      %s\n" % "\n                      ".join(EXISTING_ARRAY))
+        log.warn("REPLACE_EXISTING is currently set to [%s]." % (REPLACE_EXISTING))
+        log.warn("To replace existing files, set REPLACE_EXISTING to True and re-run this script.")
+        log.warn("\n")
+
+    log.info("-------------------")
+    log.info("Done linking files.")
+    log.info("-------------------\n")
 
 def gather_files(cfg=Configuration(), paths=None):
     """
@@ -349,30 +362,38 @@ def gather_files(cfg=Configuration(), paths=None):
     log.debug("file_array: %s" % file_array)
     return file_array
 
-def add_crontab(replace=False):
+def add_crontab(replace=REPLACE_EXISTING):
     """
     Simple function to add a set of custom crontab entries to 
     the current user's crontab.
     
     """
+    log.info("----------------------")
+    log.info("%s your crontab..." % ("Replacing" if replace else "Installing"))
+    log.info("----------------------\n")
     try:
         if INSTALL_CUSTOM_CRONTAB:
             ct = open(CRONTAB_LOCATION)
-            log.info("will %s crontab:\n\n%s\n" % ("install" if not replace else "replace",ct.read()))
+            log.info("your crontab:\n\n%s\n" % (ct.read()))
             log.info("---")
 
             if not DRY_RUN:
-                if not replace:
-                    log.info("Removing existing crontab")
+                if replace:
+                    log.info("Removing existing crontab.")
                     os.system("crontab -r")
-                    log.info("Installing new crontab")
+                    log.info("Installing new crontab.\n")
 
                 os.system("crontab %s" % CRONTAB_LOCATION)
         else:
-            log.info("INSTALL_CUSTOM_CRONTAB is set to False. For us to install your crontab, you must switch INSTALL_CUSTOM_CRONTAB to True and set CRONTAB_LOCATION to the correct path.")
+            log.info("INSTALL_CUSTOM_CRONTAB is set to False.")
+            log.info("For us to install your crontab, you must switch INSTALL_CUSTOM_CRONTAB to True and set CRONTAB_LOCATION to the correct path.\n")
     except Exception, e:
         log.warn("Looks like your CRONTAB_LOCATION path isn't properly configured.")
         log.warn("Specific Error: %s", e)
+
+    log.info("----------------------")
+    log.info("Done with crontab")
+    log.info("----------------------")
 
 def install_only_crontab(option, opt_str, value, parser, *args):
     """
@@ -380,14 +401,8 @@ def install_only_crontab(option, opt_str, value, parser, *args):
     install just the custom crontab, then exit.
     
     """
-    first_word = "Installing"
-    replace = False
-
-    if args and args[0] == 'True':
-        first_word = "Replacing"
-        replace = True
-
-    log.info("%s your crontab..." % first_word)
+    if args and args[0] == 'True': replace = True
+    else: replace = False
     add_crontab(replace)
     sys.exit(0)
 
@@ -413,16 +428,59 @@ def generate_config_file(option, opt_str, value, parser):
         log.info("config generated.")
     sys.exit(0)
 
+def dry_run_wrapper(function, *args, **kwargs):
+    """ 
+    A convenience method to wrap the function call in DRY_RUN information.
+    
+    """
+    dry_run_start()
+
+    if isinstance(function, optparse.Option):
+        function = args[3]
+        function_arg = args[4]
+
+        args = list(args)
+        del args[3]
+
+        args = tuple(args)
+
+    function(*args, **kwargs)
+
+    dry_run_end()
+
+def dry_run_start():
+    """ 
+    A convenience method to output our DRY_RUN info before run. We make sure this the output
+    only displays on DRY_RUN.
+    
+    """
+    if DRY_RUN:
+        log.error("-----------------------------------------------------------------")
+        log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED, REMOVED, or MODIFIED.")
+        log.error("-----------------------------------------------------------------\n")
+
+def dry_run_end():
+    """ 
+    A convenience method to output our DRY_RUN info after run. We make sure this the output
+    only displays on DRY_RUN.
+    
+    """
+    if DRY_RUN:
+        log.error("\n")
+        log.error("------------------------------------------------------------------------------")
+        log.error("REMINDER: THIS WAS A DRY RUN, NO FILES HAVE BEEN LINKED, REMOVED, or MODIFIED.")
+        log.error("If the output looks correct, set DRY_RUN to True and re-run.")
+        log.error("------------------------------------------------------------------------------")
+
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-q", "--quiet",   dest="level", action="store_const", const=logging.WARN, help="Only show errors.")
     parser.add_option("-v", "--verbose", dest="level", action="store_const", const=logging.DEBUG, help="Show all information, useful for debugging.")
-    parser.add_option("-c", "--install-crontab", action="callback", callback=install_only_crontab, help="This will install just your custom crontab.")
-    parser.add_option("-r", "--replace-crontab", action="callback", callback_args=('True',), callback=install_only_crontab, help="This will remove the current crontab and install your custom one.")
+    parser.add_option("-c", "--install-crontab", action="callback", callback=dry_run_wrapper, callback_args=(install_only_crontab,), help="This will install just your custom crontab.")
+    parser.add_option("-r", "--replace-crontab", action="callback", callback_args=(install_only_crontab, 'True',), callback=dry_run_wrapper, help="This will remove the current crontab and install your custom one.")
     parser.add_option("-g", "--generate-config", action="callback", metavar="DIR", nargs=1, type='string', callback=generate_config_file, help="This generates a config file filled with the defaults in DIR")
 
     opts, args = parser.parse_args(sys.argv)
-
     log.setLevel(opts.level)
 
     if PATHS_TO_PROCESS == ['paths', 'go', 'here',]:
@@ -431,18 +489,10 @@ if __name__ == "__main__":
         log.error("----------------------------------------------------------------")
         sys.exit(0)
 
-    if DRY_RUN:
-        log.error("-----------------------------------------------------------------")
-        log.error("THIS IS A DRY RUN, NO FILES WILL BE LINKED, REMOVED, or MODIFIED.")
-        log.error("-----------------------------------------------------------------\n")
+    dry_run_start()
 
     file_array = gather_files()
     link_files(file_array)
     add_crontab()
 
-    if DRY_RUN:
-        log.error("\n")
-        log.error("------------------------------------------------------------------------------")
-        log.error("REMINDER: THIS WAS A DRY RUN, NO FILES HAVE BEEN LINKED, REMOVED, or MODIFIED.")
-        log.error("If the output looks correct, set DRY_RUN to True and re-run.")
-        log.error("------------------------------------------------------------------------------")
+    dry_run_end()
